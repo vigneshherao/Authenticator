@@ -4,8 +4,10 @@
   "description": "this is authenticator application ",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vigneshherao/Authenticator.git"
@@ -21,6 +23,7 @@
   "homepage": "https://github.com/vigneshherao/Authenticator#readme",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.12.1",
     "nodemon": "^3.1.9"
