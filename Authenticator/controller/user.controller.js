@@ -1,7 +1,7 @@
 import User from "../models/User.model.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
-import bcyrpt from "bcrypt";
+
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -22,13 +22,10 @@ const register = async (req, res) => {
       res.status(400).json({ message: "User already exists" });
     }
 
-    console.log(password);
-    const hashedPassword = await bcyrpt.hash(password, 10);
-    console.log(hashedPassword);
     const user = new User({
       username,
       email,
-      password: hashedPassword,
+      password,
       role,
     });
 

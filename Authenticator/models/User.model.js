@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { type } from "os";
+import bcyrpt from "bcrypt";
 
 const userSchema = mongoose.Schema(
   {
@@ -34,6 +34,17 @@ const userSchema = mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre("save", async function (next) {
+  try {
+    if (this.isModified("password")) {
+      const hasedPassword = await bcyrpt.hash(this.password, 10);
+      this.password = hasedPassword;
+    }
+
+    next();
+  } catch (error) {}
+});
 
 const User = mongoose.model("User", userSchema);
 
