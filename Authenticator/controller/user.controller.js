@@ -1,11 +1,10 @@
 import User from "../models/User.model.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
-
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import exp from "constants";
+import bcyrpt from "bcrypt";
+
 dotenv.config();
 
 const register = async (req, res) => {
@@ -139,4 +138,104 @@ const login = async (req, res) => {
   }
 };
 
-export { register, verifyUser, login };
+const getUser = (req, res) => {
+  try {
+    res.status(200).json({
+      user: req.user,
+      sucess: true,
+      message: "User fetched successfully",
+    });
+  } catch (error) {}
+};
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  console.log(email);
+
+  if (!email) {
+    return res.status(400).json({ message: "Please fill the email field" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    console.log(user);
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    const transport = nodemailer.createTransport({
+      host: "sandbox.smtp.mailtrap.io",
+      port: 2525,
+      auth: {
+        user: "a597c3ef9d6596",
+        pass: "331929c7919ff1",
+      },
+    });
+
+    const mailOPtions = {
+      from: '"Chaicode" <test@mailtrap.io>',
+      to: user.email,
+      subject: "Forgot Password from chaicode",
+      text: "Hello forgot password link will expires in 10 min!",
+      html: `<b>Click Here</b>
+      <br/>
+      ${process.env.BASE_URL}/api/v1/users/reset-password/${resetToken}
+      `,
+    };
+
+    await transport.sendMail(mailOPtions);
+    console.log(`Reset password email sent to ${user.email}`);
+    res.status(200).json({ message: "Reset password link sent to your email" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+const passwordReset = async (req, res) => {
+  const { token } = req.params;
+  const { password, rePassword } = req.body;
+
+  if (!password || !rePassword) {
+    return res.status(400).json({ message: "Please fill in all fields" });
+  }
+
+  if (!token) {
+    return res.status(400).json({ message: "Invalid token" });
+  }
+
+  try {
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (password !== rePassword) {
+      return res.status(400).json({ message: "Password do not match" });
+    }
+
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+export { register, verifyUser, login, getUser, forgotPassword, passwordReset };
