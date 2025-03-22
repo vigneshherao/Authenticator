@@ -226,6 +226,7 @@ const passwordReset = async (req, res) => {
       return res.status(400).json({ message: "Password do not match" });
     }
 
+    user.password = password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
 
